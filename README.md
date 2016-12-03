@@ -1,2 +1,2 @@
 # reCnfg
-WIA远程配置工具
+Remote Configuration WIA远程配置工具
