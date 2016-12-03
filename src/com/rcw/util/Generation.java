@@ -2,7 +2,6 @@ package com.rcw.util;
 
 /**
  * @author Pnoker
- * @time 2016-12-3
  * @description 将字符转换成Byte数组
  */
 public class Generation {

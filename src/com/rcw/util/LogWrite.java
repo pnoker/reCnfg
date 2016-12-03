@@ -8,7 +8,6 @@ import java.util.Date;
 
 /**
  * @author Pnoker
- * @time 2016-12-3
  * @description 日志工具类
  */
 public class LogWrite {

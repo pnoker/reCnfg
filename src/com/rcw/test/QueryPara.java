@@ -6,10 +6,9 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.rcw.pojo.BaseInfo;
+import com.rcw.util.Command;
 import com.rcw.util.Generation;
 import com.rcw.util.LogWrite;
 import com.rcw.util.PackageProcessor;
@@ -20,9 +19,6 @@ public class QueryPara implements Runnable {
 	private DatagramPacket datagramSend;
 	private DatagramPacket datagramReceive;
 	private byte[] buf = new byte[1024];
-	private byte[] connectCode = { (byte) 0x02, (byte) 0x0F, (byte) 0x00, (byte) 0x00, (byte) 0x59, (byte) 0xC1 };
-	private byte[] sendCode = { (byte) 0x02, (byte) 0x69, (byte) 0x00, (byte) 0x37, (byte) 0x29, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x41, (byte) 0x7A, (byte) 0x00, (byte) 0x15, (byte) 0x05,
-			(byte) 0x7E, (byte) 0xC8 };
 	private PackageProcessor p;
 	private BaseInfo base;
 	private LogWrite logWrite;
@@ -33,13 +29,12 @@ public class QueryPara implements Runnable {
 		try {
 			this.base = base;
 			this.datagramSocket = new DatagramSocket(base.getLocalport());
-			this.datagramConnect = new DatagramPacket(connectCode, connectCode.length, InetAddress.getByName(base.getIpaddress()), base.getPort());
 			this.datagramReceive = new DatagramPacket(buf, 1024);
 			this.logWrite = new LogWrite(base.getIpaddress());
 		} catch (SocketException e) {
-			logWrite.write("【 Error!】ReceiverDatagram。1" + e.getMessage());
-		} catch (UnknownHostException e) {
-			logWrite.write("【 Error!】ReceiverDatagram.2" + e.getMessage());
+			logWrite.write(e.getMessage());
+		} catch (Exception e) {
+			logWrite.write(e.getMessage());
 		}
 	}
 
@@ -90,7 +85,7 @@ public class QueryPara implements Runnable {
 				logWrite.write("其他报文:" + hexDatagram);
 			}
 		} catch (Exception e) {
-			logWrite.write( e.getMessage());
+			logWrite.write(e.getMessage());
 		}
 		datagramReceive.setLength(1024);
 	}
@@ -101,7 +96,7 @@ public class QueryPara implements Runnable {
 			datagramSocket.send(datagramConnect);
 			datagramSocket.send(datagramSend);
 		} catch (IOException e) {
-			logWrite.write("【 Error!】ReceiverDatagram.run.1：" + e.getMessage());
+			logWrite.write( e.getMessage());
 		}
 		while (!restart) {
 			while (!stop) {
@@ -149,7 +144,12 @@ public class QueryPara implements Runnable {
 		QueryPara queryPara = new QueryPara(base);
 		Generation generation = new Generation();
 		byte[] connectCode = generation.StringToBytes("020F000059C1");// 连接网关命令，固定写法
-		byte[] sendCode = generation.StringToBytes("0269003729000000417A001505");//查询水表流量值命令
+		Command command = new Command();
+		String co = command.queryCommand("IMTAG.JL-393023", 1);
+
+		// byte[] sendCode =
+		// generation.StringToBytes("0269003729000000417A00BE00");// 查询水表流量值命令
+		byte[] sendCode = generation.StringToBytes(co);// 查询水表流量值命令
 		queryPara.chat(connectCode);
 		queryPara.chat(sendCode);
 	}
