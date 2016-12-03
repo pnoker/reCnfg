@@ -1,5 +1,7 @@
 package com.rcw.util;
 
+import com.rcw.main.MainFunction;
+
 /**
  * @author Pnoker
  * @description 将字符转换成Byte数组
@@ -75,6 +77,15 @@ public class Generation {
 		return instruct;// 返回带CRC校验码的命令
 	}
 
+	public byte[] queryCommand(String typeserial, int serial) {
+		String command = "02";// 协议标识
+		command += "6900";// 远程读取或设置命令号
+		command += MainFunction.item.get(typeserial).split("#")[0];// 设备的长地址
+		command += MainFunction.code.get("" + serial);// 操作命令号
+		byte[] b = StringToBytes(command);
+		return b;
+	}
+
 	public static void main(String[] args) {
 		Generation generation = new Generation();
 		// generation.StringToBytes("0269003729000000417A0015057EC8");
@@ -82,5 +93,12 @@ public class Generation {
 		for (int m = 0; m < code.length; m++) {
 			System.out.println(code[m]);
 		}
+	}
+
+	/**
+	 * 与网关建立连接，固定命令
+	 */
+	public byte[] connect() {
+		return StringToBytes("020F000059C1");
 	}
 }

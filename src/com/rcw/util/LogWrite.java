@@ -13,31 +13,24 @@ import java.util.Date;
 public class LogWrite {
 	private BufferedWriter fw = null;
 	private String path = "D:/dataCollect/RemoteConfigLog/";
-	private String ipaddress;
-	private String fromIp;
 	private DateUtil date;
 	private PrintUtil printUtil;
 
-	public LogWrite(String ipaddress) {
+	public LogWrite() {
 		this.printUtil = new PrintUtil();
-		this.ipaddress = ipaddress;
-		this.fromIp = ipaddress;
-		while (this.fromIp.length() < 15) {
-			this.fromIp += " ";
-		}
 		this.date = new DateUtil();
-		if (!(new File(path + ipaddress).isDirectory())) {
-			new File(path + ipaddress).mkdirs();
+		if (!(new File(path).isDirectory())) {
+			new File(path).mkdirs();
 		}
 	}
 
 	public void write(String detail) {
-		String file = path + ipaddress + "/" + date.getDayTime(new Date()) + ".txt";
+		String file = path + "/" + date.getDayTime(new Date()) + ".txt";
 		try {
 			FileOutputStream fos = new FileOutputStream(file, true);
 			fw = new BufferedWriter(new OutputStreamWriter(fos, "UTF-8"));
-			fw.write(date.getCompleteTime(new Date()) + " " + fromIp + " --> " + detail);
-			printUtil.printDetail(fromIp, detail);
+			fw.write(date.getCompleteTime(new Date()) + " " + " --> " + detail);
+			printUtil.printDetail(detail);
 			fw.newLine();
 			fw.flush();
 		} catch (Exception e) {

@@ -4,35 +4,24 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.util.Date;
 
 import com.rcw.pojo.BaseInfo;
-import com.rcw.util.Command;
-import com.rcw.util.Generation;
 import com.rcw.util.LogWrite;
 import com.rcw.util.PackageProcessor;
 
-public class QueryPara implements Runnable {
-	private DatagramSocket datagramSocket;
-	private DatagramPacket datagramConnect;
-	private DatagramPacket datagramSend;
+public class QueryPara {
 	private DatagramPacket datagramReceive;
 	private byte[] buf = new byte[1024];
 	private PackageProcessor p;
-	private BaseInfo base;
 	private LogWrite logWrite;
 	volatile boolean stop = false;
 	volatile boolean restart = false;
 
-	public QueryPara(BaseInfo base) {
+	public QueryPara() {
 		try {
-			this.base = base;
-			this.datagramSocket = new DatagramSocket(base.getLocalport());
 			this.datagramReceive = new DatagramPacket(buf, 1024);
-			this.logWrite = new LogWrite(base.getIpaddress());
-		} catch (SocketException e) {
-			logWrite.write(e.getMessage());
+			this.logWrite = new LogWrite();
 		} catch (Exception e) {
 			logWrite.write(e.getMessage());
 		}
@@ -56,14 +45,19 @@ public class QueryPara implements Runnable {
 		return sbuf.toString();
 	}
 
-	public void chat(byte[] send) {
+	public void query(BaseInfo base, byte[] send) {
 		logWrite.write("<---当前网关:" + base.getIpaddress() + "--->");
+		DatagramSocket datagramSocket = null;
+		long start = 0, end = 0;
+		Date date = new Date();
 		try {
-			this.datagramSend = new DatagramPacket(send, send.length, InetAddress.getByName(base.getIpaddress()), base.getPort());
+			datagramSocket = new DatagramSocket(base.getLocalport());
+			DatagramPacket datagramSend = new DatagramPacket(send, send.length, InetAddress.getByName(base.getIpaddress()), base.getPort());
 			datagramSocket.send(datagramSend);
 			logWrite.write("发送:" + getHexDatagram(send, send.length));
+			start = (new Date()).getTime();
 		} catch (IOException e) {
-			logWrite.write("【 Error!】ReceiverDatagram.run.1：" + e.getMessage());
+			logWrite.write(e.getMessage());
 		}
 		try {
 			datagramSocket.setSoTimeout(1000 * 10);
@@ -75,82 +69,23 @@ public class QueryPara implements Runnable {
 			switch (datastart) {
 			/* 正响应 或者是负响应二 */
 			case "026a00":
-				logWrite.write("正响应或者负响应二报文:" + hexDatagram);
+				logWrite.write("成功:" + hexDatagram);
+				float value = p.bytesToFloatSmall(13, 16);
+				logWrite.write("查询结果为:" + value);
 				break;
 			/* 负响应 一 */
 			case "026a01":
-				logWrite.write("正响应或者负响应二报文:" + hexDatagram);
+				logWrite.write("失败:" + hexDatagram);
 				break;
 			default:
-				logWrite.write("其他报文:" + hexDatagram);
+				logWrite.write("其他:" + hexDatagram);
 			}
 		} catch (Exception e) {
 			logWrite.write(e.getMessage());
 		}
 		datagramReceive.setLength(1024);
-	}
-
-	public void run() {
-		logWrite.write("<---当前网关:" + base.getIpaddress() + ",启动线程--->");
-		try {
-			datagramSocket.send(datagramConnect);
-			datagramSocket.send(datagramSend);
-		} catch (IOException e) {
-			logWrite.write( e.getMessage());
-		}
-		while (!restart) {
-			while (!stop) {
-				try {
-					datagramSocket.setSoTimeout(1000 * 10);
-					datagramSocket.receive(datagramReceive);
-					byte[] receive = datagramReceive.getData();
-					p = new PackageProcessor(receive);
-					String hexDatagram = getHexDatagram(datagramReceive.getData(), datagramReceive.getLength());
-					String datastart = p.bytesToString(0, 1);
-					switch (datastart) {
-					/* 正响应 或者是负响应二 */
-					case "026a00":
-						logWrite.write("正响应或者负响应二报文:" + hexDatagram);
-						break;
-					/* 负响应 一 */
-					case "026a01":
-						logWrite.write("正响应或者负响应二报文:" + hexDatagram);
-						break;
-					default:
-						logWrite.write("其他报文:" + hexDatagram);
-					}
-				} catch (Exception e) {
-					logWrite.write(e.getMessage());
-					try {
-						datagramSocket.send(datagramSend);
-					} catch (IOException e1) {
-						logWrite.write(e1.getMessage());
-					}
-				}
-				datagramReceive.setLength(1024);
-			}
-		}
 		datagramSocket.close();
-		logWrite.close();
-	}
-
-	public static void main(String[] args) {
-		System.out.println("<---初始化操作--->");
-		System.out.println("<---启动远程配置线程--->");
-		BaseInfo base = new BaseInfo();
-		base.setIpaddress("10.112.126.29");
-		base.setLocalport(6003);
-		base.setPort(6001);
-		QueryPara queryPara = new QueryPara(base);
-		Generation generation = new Generation();
-		byte[] connectCode = generation.StringToBytes("020F000059C1");// 连接网关命令，固定写法
-		Command command = new Command();
-		String co = command.queryCommand("IMTAG.JL-393023", 1);
-
-		// byte[] sendCode =
-		// generation.StringToBytes("0269003729000000417A00BE00");// 查询水表流量值命令
-		byte[] sendCode = generation.StringToBytes(co);// 查询水表流量值命令
-		queryPara.chat(connectCode);
-		queryPara.chat(sendCode);
+		end = (new Date()).getTime();
+		System.out.println("本次查询耗时:" + (end - start) + "ms");
 	}
 }

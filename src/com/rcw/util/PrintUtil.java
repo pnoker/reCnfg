@@ -13,11 +13,8 @@ public class PrintUtil {
 		this.date = new DateUtil();
 	}
 
-	public void printDetail(String ipaddress, String detail) {
-		while (ipaddress.length() < 15) {
-			ipaddress += " ";
-		}
-		System.out.println(date.getCompleteTime(new Date()) + " " + ipaddress + " --> " + detail);
+	public void printDetail(String detail) {
+		System.out.println(date.getCompleteTime(new Date()) + " " + " --> " + detail);
 	}
 
 	public void printMessage(String message) {
