@@ -38,6 +38,6 @@ public class MainFunction {
 		System.out.println("<---初始化操作--->");
 		System.out.println("<---启动远程配置线程--->");
 		initParameter();
-		query("IMTAG.JL-393024", 1);
+		query("IMTAG.JL-393023", 10);
 	}
 }

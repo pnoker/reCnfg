@@ -70,8 +70,31 @@ public class QueryPara {
 			/* 正响应 或者是负响应二 */
 			case "026a00":
 				logWrite.write("成功:" + hexDatagram);
-				float value = p.bytesToFloatSmall(13, 16);
-				logWrite.write("查询结果为:" + value);
+				if (p.bytesToString(11, 12).equals("1605")) {
+					int value = p.bytesToIntSmall(13, 16);
+					logWrite.write("水表上传周期为:" + value + "S");
+				}
+				if (p.bytesToString(11, 12).equals("1305")) {
+					float value = p.bytesToFloatSmall(13, 16);
+					logWrite.write("水表磁性指针位置为:" + (value / 10));
+				}
+				if (p.bytesToString(11, 12).equals("1005")) {
+					float value = p.bytesToFloatSmall(13, 16);
+					logWrite.write("水表基数为:" + value + "M³");
+				}
+				if (p.bytesToString(11, 12).equals("1505")) {
+					float value = p.bytesToFloatSmall(13, 16);
+					logWrite.write("水表流量值为:" + value + "M³");
+				}
+				if (p.bytesToString(11, 12).equals("be00")) {
+					String value = p.bytesToString(13, 37);
+					if (value.equals("ffffffffffffffffffffffffffffffffffffffffffffffff00")) {
+						logWrite.write("未配置水表位号");
+					} else {
+						logWrite.write("水表位号为:" + value);
+					}
+				}
+
 				break;
 			/* 负响应 一 */
 			case "026a01":
