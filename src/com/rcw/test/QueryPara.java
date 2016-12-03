@@ -44,6 +44,73 @@ public class QueryPara {
 		}
 		return sbuf.toString();
 	}
+	/**
+	 * 正响应解析
+	 */
+	public void success(PackageProcessor p) {
+		if (p.bytesToString(11, 12).equals("1605")) {
+			int value = p.bytesToIntSmall(13, 16);
+			logWrite.write("水表上传周期为:" + value + "S");
+		}
+		if (p.bytesToString(11, 12).equals("1305")) {
+			float value = p.bytesToFloatSmall(13, 16);
+			logWrite.write("水表磁性指针位置为:" + (value / 10));
+		}
+		if (p.bytesToString(11, 12).equals("1005")) {
+			float value = p.bytesToFloatSmall(13, 16);
+			logWrite.write("水表基数为:" + value + "M³");
+		}
+		if (p.bytesToString(11, 12).equals("1505")) {
+			float value = p.bytesToFloatSmall(13, 16);
+			logWrite.write("水表流量值为:" + value + "M³");
+		}
+		if (p.bytesToString(11, 12).equals("be00")) {
+			String value = p.bytesToString(13, 37);
+			if (value.equals("ffffffffffffffffffffffffffffffffffffffffffffffff00")) {
+				logWrite.write("未配置水表位号");
+			} else {
+				logWrite.write("水表位号为:" + value);
+			}
+		}
+	}
+	/**
+	 * 负响应解析
+	 */
+	public void fail(PackageProcessor p) {
+		if (p.bytesToString(3, 3).equals("01")) {
+			logWrite.write("未知错误");
+		}
+		if (p.bytesToString(3, 3).equals("02")) {
+			logWrite.write("输入长度有问题");
+		}
+		if (p.bytesToString(3, 3).equals("03")) {
+			logWrite.write("不支持的命令号");
+		}
+		if (p.bytesToString(3, 3).equals("04")) {
+			logWrite.write("设备不在网");
+		}
+		if (p.bytesToString(3, 3).equals("05")) {
+			logWrite.write("串口号错误");
+		}
+		if (p.bytesToString(3, 3).equals("06")) {
+			logWrite.write("数据不合理");
+		}
+		if (p.bytesToString(3, 3).equals("07")) {
+			logWrite.write("地址不成对");
+		}
+		if (p.bytesToString(3, 3).equals("08")) {
+			logWrite.write("写入Modbus映射表地址索引不连续");
+		}
+		if (p.bytesToString(3, 3).equals("09")) {
+			logWrite.write("写入Modbus地址溢出");
+		}
+		if (p.bytesToString(3, 3).equals("10")) {
+			logWrite.write("UDP端口重复");
+		}
+		if (p.bytesToString(3, 3).equals("11")) {
+			logWrite.write("命令号不存在");
+		}
+	}
 
 	public void query(BaseInfo base, byte[] send) {
 		logWrite.write("<---当前网关:" + base.getIpaddress() + "--->");
@@ -70,35 +137,12 @@ public class QueryPara {
 			/* 正响应 或者是负响应二 */
 			case "026a00":
 				logWrite.write("成功:" + hexDatagram);
-				if (p.bytesToString(11, 12).equals("1605")) {
-					int value = p.bytesToIntSmall(13, 16);
-					logWrite.write("水表上传周期为:" + value + "S");
-				}
-				if (p.bytesToString(11, 12).equals("1305")) {
-					float value = p.bytesToFloatSmall(13, 16);
-					logWrite.write("水表磁性指针位置为:" + (value / 10));
-				}
-				if (p.bytesToString(11, 12).equals("1005")) {
-					float value = p.bytesToFloatSmall(13, 16);
-					logWrite.write("水表基数为:" + value + "M³");
-				}
-				if (p.bytesToString(11, 12).equals("1505")) {
-					float value = p.bytesToFloatSmall(13, 16);
-					logWrite.write("水表流量值为:" + value + "M³");
-				}
-				if (p.bytesToString(11, 12).equals("be00")) {
-					String value = p.bytesToString(13, 37);
-					if (value.equals("ffffffffffffffffffffffffffffffffffffffffffffffff00")) {
-						logWrite.write("未配置水表位号");
-					} else {
-						logWrite.write("水表位号为:" + value);
-					}
-				}
-
+				success(p);
 				break;
 			/* 负响应 一 */
 			case "026a01":
-				logWrite.write("失败:" + hexDatagram);
+				logWrite.write("错误:" + hexDatagram);
+				fail(p);
 				break;
 			default:
 				logWrite.write("其他:" + hexDatagram);
