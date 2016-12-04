@@ -34,10 +34,38 @@ public class MainFunction {
 		queryPara.query(base, sendCode);
 	}
 
+	public static void config(String typeserial, int serial, float value) {
+		QueryPara queryPara = new QueryPara();
+		Generation generation = new Generation();
+		byte[] connectCode = generation.connect();// 连接网关命令，固定写法
+		byte[] sendCode = generation.configCommand(typeserial, serial, value);
+		BaseInfo base = new BaseInfo();
+		base.setIpaddress(MainFunction.item.get(typeserial).split("#")[1]);
+		base.setLocalport(Integer.parseInt(MainFunction.item.get(typeserial).split("#")[2]));
+		base.setPort(6001);
+		queryPara.query(base, connectCode);
+		queryPara.query(base, sendCode);
+	}
+
+	public static void config(String typeserial, int serial, String value) {
+		QueryPara queryPara = new QueryPara();
+		Generation generation = new Generation();
+		byte[] connectCode = generation.connect();// 连接网关命令，固定写法
+		byte[] sendCode = generation.configCommand(typeserial, serial, value);
+		BaseInfo base = new BaseInfo();
+		base.setIpaddress(MainFunction.item.get(typeserial).split("#")[1]);
+		base.setLocalport(Integer.parseInt(MainFunction.item.get(typeserial).split("#")[2]));
+		base.setPort(6001);
+		queryPara.query(base, connectCode);
+		queryPara.query(base, sendCode);
+	}
+
 	public static void main(String[] args) {
 		System.out.println("<---初始化操作--->");
 		System.out.println("<---启动远程配置线程--->");
 		initParameter();
-		query("IMTAG.JL-393023", 1);
+		query("shui", 10);
+		config("shui", 9,"1_Aa-您好%*！@#￥%……");
+		query("shui", 10);
 	}
 }

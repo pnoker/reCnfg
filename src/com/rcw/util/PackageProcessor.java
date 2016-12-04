@@ -3,6 +3,8 @@ package com.rcw.util;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -95,7 +97,8 @@ public class PackageProcessor {
 	public float bytesToFloatSmall(int startbit, int endbit) {
 		float value = 0;
 		try {
-			byte[] s = { inpackage[startbit + 3], inpackage[startbit + 2], inpackage[startbit + 1], inpackage[startbit] };
+			byte[] s = { inpackage[startbit + 3], inpackage[startbit + 2], inpackage[startbit + 1],
+					inpackage[startbit] };
 			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(s));
 			value = dis.readFloat();
 		} catch (IOException e) {
@@ -107,7 +110,8 @@ public class PackageProcessor {
 	public float bytesToFloat3(int startbit, int endbit) {
 		float value = 0;
 		try {
-			byte[] s = { inpackage[startbit], inpackage[startbit + 1], inpackage[startbit + 2], inpackage[startbit + 3] };
+			byte[] s = { inpackage[startbit], inpackage[startbit + 1], inpackage[startbit + 2],
+					inpackage[startbit + 3] };
 			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(s));
 			value = dis.readFloat();
 		} catch (IOException e) {
@@ -122,7 +126,8 @@ public class PackageProcessor {
 	public float bytesToFloatMiddle(int startbit, int endbit) {
 		float value = 0;
 		try {
-			byte[] s = { inpackage[startbit + 2], inpackage[startbit + 3], inpackage[startbit], inpackage[startbit + 1] };
+			byte[] s = { inpackage[startbit + 2], inpackage[startbit + 3], inpackage[startbit],
+					inpackage[startbit + 1] };
 			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(s));
 			value = dis.readFloat();
 		} catch (IOException e) {
@@ -145,6 +150,22 @@ public class PackageProcessor {
 				s = s.substring(s.length() - 2, s.length());
 			}
 			result = result + s;
+		}
+		return result;
+	}
+
+	public String bytesToChar(int startbit, int endbit) {
+		String result = "";
+		byte[] bytes = new byte[endbit - startbit + 1];
+		int num = 0;
+		for (int i = startbit; i <= endbit; i++) {
+			bytes[num] = inpackage[i];
+			num++;
+		}
+		try {
+			result = new String(bytes, "GBK");
+		} catch (UnsupportedEncodingException e) {
+			System.out.println(e.getMessage());
 		}
 		return result;
 	}
@@ -244,20 +265,39 @@ public class PackageProcessor {
 		return num;
 	}
 
+	public byte[] FloatToBytes(float f) {
+		byte[] bytes = ByteBuffer.allocate(4).putFloat(f).array();
+		byte[] result = new byte[4];
+		for (int m = 0; m < bytes.length; m++) {
+			result[3 - m] = bytes[m];
+		}
+		return result;
+	}
+
 	public static void main(String[] args) {
 
-		byte[] test1 = { (byte) 0x01, (byte) 0x83, (byte) 0x0B, (byte) 0x00, (byte) 0x37, (byte) 0x02, (byte) 0x00, (byte) 0x00, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
-				(byte) 0x86, (byte) 0x26, (byte) 0x06, (byte) 0xA2, (byte) 0x86, (byte) 0x36, (byte) 0x01, (byte) 0x07, (byte) 0x00, (byte) 0x48, (byte) 0x0C, (byte) 0x3F, (byte) 0xB5, (byte) 0x6A,
-				(byte) 0xD2, (byte) 0xC4, (byte) 0x1A, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0xB3, (byte) 0xA7, (byte) 0x00, (byte) 0x00, (byte) 0x78, (byte) 0xDD };
-		byte[] test2 = { (byte) 0x02, (byte) 0x69, (byte) 0x00, (byte) 0x37, (byte) 0x29, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x41, (byte) 0x7A, (byte) 0x00, (byte) 0x15, (byte) 0x05,
-				(byte) 0x7E, (byte) 0xC8 };
-		PackageProcessor p1 = new PackageProcessor(test2);
-		System.out.println(p1.wiaPaCRC(test2.length));
-		System.out.println(p1.intToTwoBytes(23495));
-		byte[] g = p1.genWiaPaCRC(32456);
-		for(int m=0;m<g.length;m++){
-			System.out.println(g[m]);
-		}
+		byte[] test1 = { (byte) 0x01, (byte) 0x83, (byte) 0x0B, (byte) 0x00, (byte) 0x37, (byte) 0x02, (byte) 0x00,
+				(byte) 0x00, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0x86, (byte) 0x26,
+				(byte) 0x06, (byte) 0xA2, (byte) 0x86, (byte) 0x36, (byte) 0x01, (byte) 0x07, (byte) 0x00, (byte) 0x48,
+				(byte) 0x0C, (byte) 0x3F, (byte) 0xB5, (byte) 0x6A, (byte) 0xD2, (byte) 0xC4, (byte) 0x1A, (byte) 0x00,
+				(byte) 0x00, (byte) 0x00, (byte) 0xB3, (byte) 0xA7, (byte) 0x00, (byte) 0x00, (byte) 0x78,
+				(byte) 0xDD };
+		byte[] test2 = { (byte) 0x02, (byte) 0x69, (byte) 0x00, (byte) 0x37, (byte) 0x29, (byte) 0x00, (byte) 0x00,
+				(byte) 0x00, (byte) 0x41, (byte) 0x7A, (byte) 0x00, (byte) 0x15, (byte) 0x05, (byte) 0x7E,
+				(byte) 0xC8 };
+		byte[] test3 = { (byte) 0x00, (byte) 0x00, (byte) 0x40, (byte) 0x41 };
+		PackageProcessor p1 = new PackageProcessor(test3);
+		// System.out.println(p1.wiaPaCRC(test2.length));
+		// System.out.println(p1.intToTwoBytes(23495));
+		// byte[] g = p1.genWiaPaCRC(32456);
+		// for(int m=0;m<g.length;m++){
+		// System.out.println(g[m]);
+		// }
 
+		float f = p1.bytesToFloatSmall(0, 3);
+		System.out.println(f);
+		byte[] f4 = ByteBuffer.allocate(4).putFloat(f).array();
+		System.out.println(f4);
+		byte[] f5 = p1.FloatToBytes(f);
 	}
 }
