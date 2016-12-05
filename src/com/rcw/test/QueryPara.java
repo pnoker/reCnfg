@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Date;
 
+import com.rcw.main.MainFunction;
 import com.rcw.pojo.BaseInfo;
 import com.rcw.util.Generation;
 import com.rcw.util.LogWrite;
@@ -138,7 +139,22 @@ public class QueryPara {
 		}
 	}
 
-	public void query(BaseInfo base, byte[] send) {
+	public boolean data(PackageProcessor p, String typeserial) {
+		boolean timeout = false;
+		String longAddress = MainFunction.item.get(typeserial).split("#")[0];
+		if (longAddress.equals("E119000000417A00")) {
+			String cz = MainFunction.item.get(typeserial).split("#")[3];// 设备的从站地址
+			String md = MainFunction.item.get(typeserial).split("#")[4];// Modbus命令号
+			if (p.bytesToString(3, 13).toUpperCase().equals(longAddress + "01" + cz + md)) {
+				float value = p.bytesToFloatSmall(21, 24);
+				logWrite.write("IO值为:" + value);
+				timeout = true;
+			}
+		}
+		return timeout;
+	}
+
+	public void query(BaseInfo base, byte[] send, String typeserial) {
 		boolean timeOut = false;
 		logWrite.write("<---当前网关:" + base.getIpaddress() + "--->");
 		DatagramSocket datagramSocket = null;
@@ -179,6 +195,16 @@ public class QueryPara {
 				case "020f80":
 					logWrite.write("网关连接成功:" + hexDatagram);
 					timeOut = true;
+					break;
+				case "025500":
+					logWrite.write("仪表应用数据:" + hexDatagram);
+					if (data(p, typeserial)) {
+						timeOut = true;
+					}
+					end = (new Date()).getTime();
+					if ((end - start) > 10000) {
+						timeOut = true;
+					}
 					break;
 				default:
 					logWrite.write("其他:" + hexDatagram);
