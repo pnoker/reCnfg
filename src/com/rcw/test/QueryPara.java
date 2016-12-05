@@ -146,7 +146,7 @@ public class QueryPara {
 			String cz = MainFunction.item.get(typeserial).split("#")[3];// 设备的从站地址
 			String md = MainFunction.item.get(typeserial).split("#")[4];// Modbus命令号
 			if (p.bytesToString(3, 13).toUpperCase().equals(longAddress + "01" + cz + md)) {
-				float value = p.bytesToFloatSmall(21, 24);
+				float value = p.bytesToFloatSmall(17, 22);
 				logWrite.write("IO值为:" + value);
 				timeout = true;
 			}
@@ -209,7 +209,7 @@ public class QueryPara {
 				default:
 					logWrite.write("其他:" + hexDatagram);
 					end = (new Date()).getTime();
-					if ((end - start) > 10000) {
+					if ((end - start) > 8000) {
 						timeOut = true;
 					}
 				}
