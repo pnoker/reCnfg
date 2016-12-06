@@ -8,6 +8,7 @@ import java.util.Date;
 
 import com.rcw.main.MainFunction;
 import com.rcw.pojo.BaseInfo;
+import com.rcw.pojo.Result;
 import com.rcw.util.LogWrite;
 import com.rcw.util.PackageProcessor;
 
@@ -48,9 +49,11 @@ public class QueryPara {
 	/**
 	 * 正响应解析
 	 */
-	public void success(PackageProcessor p) {
+	public String success(PackageProcessor p) {
+		String result = "";
 		if (p.bytesToString(11, 12).equals("1605")) {
 			int value = p.bytesToIntSmall(13, 16);
+			result += value;
 			logWrite.write("水表上传周期为:" + value + "S");
 		}
 		if (p.bytesToString(11, 12).equals("1305")) {
@@ -73,72 +76,93 @@ public class QueryPara {
 				num = "0.0001";
 				break;
 			}
+			result += num;
 			logWrite.write("水表磁性指针位置为:" + num);
 		}
 		if (p.bytesToString(11, 12).equals("1005")) {
 			float value = p.bytesToFloatSmall(13, 16);
+			result += value;
 			logWrite.write("水表基数为:" + value + "M³");
 		}
 		if (p.bytesToString(11, 12).equals("1505")) {
 			float value = p.bytesToFloatSmall(13, 16);
+			result += value;
 			logWrite.write("水表流量值为:" + value + "M³");
 		}
 		if (p.bytesToString(11, 12).equals("be00")) {
 			String value = p.bytesToString(13, 37);
 			if (value.equals("ffffffffffffffffffffffffffffffffffffffffffffffff00")) {
 				logWrite.write("未配置水表位号");
+				result += "未配置水表位号";
 			} else {
 				value = p.bytesToChar(13, 37);// 字节流转换成字符转
+				result += value;
 				logWrite.write("水表位号为:" + value);
 			}
 		}
 		if (p.bytesToString(11, 12).equals("1205")) {
 			float value = p.bytesToIntSmall(13, 16);
+			result += value;
 			logWrite.write("水表脉冲个数为:" + value + "个");
 		}
+		return result;
 	}
 
 	/**
 	 * 负响应解析
 	 */
-	public void fail(PackageProcessor p) {
+	public String fail(PackageProcessor p) {
+		String result = "";
 		if (p.bytesToString(3, 3).equals("01")) {
+			result += "未知错误";
 			logWrite.write("未知错误");
 		}
 		if (p.bytesToString(3, 3).equals("02")) {
+			result += "输入长度有问题";
 			logWrite.write("输入长度有问题");
 		}
 		if (p.bytesToString(3, 3).equals("03")) {
+			result += "不支持的命令号";
 			logWrite.write("不支持的命令号");
 		}
 		if (p.bytesToString(3, 3).equals("04")) {
+			result += "设备不在网";
 			logWrite.write("设备不在网");
 		}
 		if (p.bytesToString(3, 3).equals("05")) {
+			result += "串口号错误";
 			logWrite.write("串口号错误");
 		}
 		if (p.bytesToString(3, 3).equals("06")) {
+			result += "数据不合理";
 			logWrite.write("数据不合理");
 		}
 		if (p.bytesToString(3, 3).equals("07")) {
+			result += "地址不成对";
 			logWrite.write("地址不成对");
 		}
 		if (p.bytesToString(3, 3).equals("08")) {
+			result += "写入Modbus映射表地址索引不连续";
 			logWrite.write("写入Modbus映射表地址索引不连续");
 		}
 		if (p.bytesToString(3, 3).equals("09")) {
+			result += "写入Modbus地址溢出";
 			logWrite.write("写入Modbus地址溢出");
 		}
 		if (p.bytesToString(3, 3).equals("10")) {
+			result += "UDP端口重复";
 			logWrite.write("UDP端口重复");
 		}
 		if (p.bytesToString(3, 3).equals("11")) {
+			result += "命令号不存在";
 			logWrite.write("命令号不存在");
 		}
+		return result;
 	}
 
-	public boolean data(PackageProcessor p, String typeserial, int serial) {
-		boolean timeout = false;
+	public Result data(PackageProcessor p, String typeserial, int serial) {
+		Result result = new Result();
+		result.setSuccess(false);
 		String longAddress = MainFunction.item.get(typeserial).split("#")[0];
 		if (longAddress.equals("E119000000417A00")) {
 			String cz = MainFunction.item.get(typeserial).split("#")[3];// 设备的从站地址
@@ -148,7 +172,8 @@ public class QueryPara {
 				int value2 = (int) (p.bytesToInt(21, 24) * 0.1);
 				logWrite.write("IO的瞬时值为:" + value1);
 				logWrite.write("IO的累计值为:" + value2);
-				timeout = true;
+				result.setSuccess(true);
+				result.setResult(value1 + "," + value2);
 			}
 		}
 		if (longAddress.equals("F119000000417A00") || longAddress.equals("F31A000000417A00")) {
@@ -166,7 +191,8 @@ public class QueryPara {
 						value = (float) (value * 0.1);
 					}
 					logWrite.write("开封开润表瞬时值为:" + value);
-					timeout = true;
+					result.setSuccess(true);
+					result.setResult("" + value);
 				}
 			}
 			if (serial == 15) {
@@ -179,14 +205,16 @@ public class QueryPara {
 					int d4 = p.bytesToTen(18, 18);
 					float value = d4 * 1000000 + d3 * 1000000 + d2 * 10000 + d1 * 100 + d0;
 					logWrite.write("开封开润表瞬时值为:" + value);
-					timeout = true;
+					result.setSuccess(true);
+					result.setResult("" + value);
 				}
 			}
 		}
-		return timeout;
+		return result;
 	}
 
-	public void query(BaseInfo base, byte[] send, String typeserial, int serial) {
+	public String query(BaseInfo base, byte[] send, String typeserial, int serial) {
+		String result = "";
 		boolean timeOut = false;
 		boolean reConnect = true;
 		logWrite.write("<---当前网关:" + base.getIpaddress() + "--->");
@@ -195,7 +223,8 @@ public class QueryPara {
 		DatagramPacket datagramSend = null;
 		try {
 			datagramSocket = new DatagramSocket(base.getLocalport());
-			datagramSend = new DatagramPacket(send, send.length, InetAddress.getByName(base.getIpaddress()), base.getPort());
+			datagramSend = new DatagramPacket(send, send.length, InetAddress.getByName(base.getIpaddress()),
+					base.getPort());
 			num = 0;// 计数清零
 			start = (new Date()).getTime();
 		} catch (IOException e) {
@@ -227,14 +256,14 @@ public class QueryPara {
 					/* 正响应 或者是负响应二 */
 					case "026a00":
 						logWrite.write("成功:" + hexDatagram);
-						success(p);
+						result = success(p);
 						timeOut = true;
 						reConnect = false;
 						break;
 					/* 负响应 一 */
 					case "026980":
 						logWrite.write("错误:" + hexDatagram);
-						fail(p);
+						result = fail(p);
 						timeOut = true;
 						reConnect = false;
 						break;
@@ -245,8 +274,10 @@ public class QueryPara {
 						reConnect = false;
 						break;
 					case "025500":
-						logWrite.write("仪表应用数据:" + hexDatagram);
-						if (data(p, typeserial, serial)) {
+						logWrite.write("应用数据:" + hexDatagram);
+						Result dataResult = data(p, typeserial, serial);
+						if (dataResult.isSuccess()) {
+							result = dataResult.getResult();
 							timeOut = true;
 							reConnect = false;
 						}
@@ -269,23 +300,11 @@ public class QueryPara {
 					timeOut = true;
 				}
 			}
-			/*if (num >= 3) {// 3次重连机会，超过3次就退出重连机制
-				reConnect = false;
-				logWrite.write("操作失败，请稍后重试！");
-			} else {
-				try {
-					datagramSocket.send(datagramSend);
-					logWrite.write("发送:" + getHexDatagram(send, send.length));
-					num++;
-					timeOut = false;
-				} catch (IOException e) {
-					logWrite.write(e.getMessage());
-				}
-			}*/
 		}
 		datagramReceive.setLength(1024);
 		datagramSocket.close();
 		end = (new Date()).getTime();
 		System.out.println("本次操作耗时:" + (end - start) + "ms");
+		return result;
 	}
 }
