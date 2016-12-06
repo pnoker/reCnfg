@@ -8,7 +8,6 @@ import java.util.Date;
 
 import com.rcw.main.MainFunction;
 import com.rcw.pojo.BaseInfo;
-import com.rcw.util.Generation;
 import com.rcw.util.LogWrite;
 import com.rcw.util.PackageProcessor;
 
@@ -17,8 +16,7 @@ public class QueryPara {
 	private byte[] buf = new byte[1024];
 	private PackageProcessor p;
 	private LogWrite logWrite;
-	volatile boolean stop = false;
-	volatile boolean restart = false;
+	private int num;
 
 	public QueryPara() {
 		try {
@@ -139,84 +137,151 @@ public class QueryPara {
 		}
 	}
 
-	public boolean data(PackageProcessor p, String typeserial) {
+	public boolean data(PackageProcessor p, String typeserial, int serial) {
 		boolean timeout = false;
 		String longAddress = MainFunction.item.get(typeserial).split("#")[0];
 		if (longAddress.equals("E119000000417A00")) {
 			String cz = MainFunction.item.get(typeserial).split("#")[3];// 设备的从站地址
 			String md = MainFunction.item.get(typeserial).split("#")[4];// Modbus命令号
 			if (p.bytesToString(3, 13).toUpperCase().equals(longAddress + "01" + cz + md)) {
-				float value = p.bytesToFloatSmall(17, 22);
-				logWrite.write("IO值为:" + value);
+				float value1 = p.bytesToInt(17, 20);
+				int value2 = (int) (p.bytesToInt(21, 24) * 0.1);
+				logWrite.write("IO的瞬时值为:" + value1);
+				logWrite.write("IO的累计值为:" + value2);
 				timeout = true;
+			}
+		}
+		if (longAddress.equals("F119000000417A00") || longAddress.equals("F31A000000417A00")) {
+			String cz = MainFunction.item.get(typeserial).split("#")[3];// 设备的从站地址
+			String md = "";
+			if (serial == 14) {
+				md = "00";
+				if (p.bytesToString(3, 13).toUpperCase().equals(longAddress + "07" + cz + md)) {
+					int d0 = p.bytesToTen(14, 14);
+					int d1 = p.bytesToTen(15, 15);
+					int d2 = p.bytesToTen(16, 16);
+					int d3 = p.bytesToTen(17, 17);
+					float value = d2 * 10000 + d1 * 100 + d0;
+					for (int i = 0; i < d3 - 5; i++) {
+						value = (float) (value * 0.1);
+					}
+					logWrite.write("开封开润表瞬时值为:" + value);
+					timeout = true;
+				}
+			}
+			if (serial == 15) {
+				md = "04";
+				if (p.bytesToString(3, 13).toUpperCase().equals(longAddress + "07" + cz + md)) {
+					int d0 = p.bytesToTen(14, 14);
+					int d1 = p.bytesToTen(15, 15);
+					int d2 = p.bytesToTen(16, 16);
+					int d3 = p.bytesToTen(17, 17);
+					int d4 = p.bytesToTen(18, 18);
+					float value = d4 * 1000000 + d3 * 1000000 + d2 * 10000 + d1 * 100 + d0;
+					logWrite.write("开封开润表瞬时值为:" + value);
+					timeout = true;
+				}
 			}
 		}
 		return timeout;
 	}
 
-	public void query(BaseInfo base, byte[] send, String typeserial) {
+	public void query(BaseInfo base, byte[] send, String typeserial, int serial) {
 		boolean timeOut = false;
+		boolean reConnect = true;
 		logWrite.write("<---当前网关:" + base.getIpaddress() + "--->");
 		DatagramSocket datagramSocket = null;
 		long start = 0, end = 0;
-		Date date = new Date();
+		DatagramPacket datagramSend = null;
 		try {
 			datagramSocket = new DatagramSocket(base.getLocalport());
-			DatagramPacket datagramSend = new DatagramPacket(send, send.length,
-					InetAddress.getByName(base.getIpaddress()), base.getPort());
-			datagramSocket.send(datagramSend);
-			logWrite.write("发送:" + getHexDatagram(send, send.length));
+			datagramSend = new DatagramPacket(send, send.length, InetAddress.getByName(base.getIpaddress()), base.getPort());
+			num = 0;// 计数清零
 			start = (new Date()).getTime();
 		} catch (IOException e) {
 			logWrite.write(e.getMessage());
 		}
-		while (!timeOut) {
-			try {
-				datagramSocket.setSoTimeout(1000 * 10);
-				datagramSocket.receive(datagramReceive);
-				byte[] receive = datagramReceive.getData();
-				p = new PackageProcessor(receive);
-				String hexDatagram = getHexDatagram(datagramReceive.getData(), datagramReceive.getLength());
-				String datastart = p.bytesToString(0, 2);
-				switch (datastart) {
-				/* 正响应 或者是负响应二 */
-				case "026a00":
-					logWrite.write("成功:" + hexDatagram);
-					success(p);
-					timeOut = true;
-					break;
-				/* 负响应 一 */
-				case "026980":
-					logWrite.write("错误:" + hexDatagram);
-					fail(p);
-					timeOut = true;
-					break;
-				/* 网关连接成功 */
-				case "020f80":
-					logWrite.write("网关连接成功:" + hexDatagram);
-					timeOut = true;
-					break;
-				case "025500":
-					logWrite.write("仪表应用数据:" + hexDatagram);
-					if (data(p, typeserial)) {
-						timeOut = true;
-					}
-					end = (new Date()).getTime();
-					if ((end - start) > 10000) {
-						timeOut = true;
-					}
-					break;
-				default:
-					logWrite.write("其他:" + hexDatagram);
-					end = (new Date()).getTime();
-					if ((end - start) > 8000) {
-						timeOut = true;
-					}
+		while (reConnect) {
+			if (num >= 3) {// 3次重连机会，超过3次就退出重连机制
+				reConnect = false;
+				logWrite.write("操作失败，请稍后重试！");
+			} else {
+				try {
+					datagramSocket.send(datagramSend);
+					logWrite.write("发送:" + getHexDatagram(send, send.length));
+					num++;
+					timeOut = false;
+				} catch (IOException e) {
+					logWrite.write(e.getMessage());
 				}
-			} catch (Exception e) {
-				logWrite.write(e.getMessage());
-				timeOut = true;
 			}
+			while (!timeOut) {
+				try {
+					datagramSocket.setSoTimeout(1000 * 10);
+					datagramSocket.receive(datagramReceive);
+					byte[] receive = datagramReceive.getData();
+					p = new PackageProcessor(receive);
+					String hexDatagram = getHexDatagram(datagramReceive.getData(), datagramReceive.getLength());
+					String datastart = p.bytesToString(0, 2);
+					switch (datastart) {
+					/* 正响应 或者是负响应二 */
+					case "026a00":
+						logWrite.write("成功:" + hexDatagram);
+						success(p);
+						timeOut = true;
+						reConnect = false;
+						break;
+					/* 负响应 一 */
+					case "026980":
+						logWrite.write("错误:" + hexDatagram);
+						fail(p);
+						timeOut = true;
+						reConnect = false;
+						break;
+					/* 网关连接成功 */
+					case "020f80":
+						logWrite.write("网关连接成功:" + hexDatagram);
+						timeOut = true;
+						reConnect = false;
+						break;
+					case "025500":
+						logWrite.write("仪表应用数据:" + hexDatagram);
+						if (data(p, typeserial, serial)) {
+							timeOut = true;
+							reConnect = false;
+						}
+						end = (new Date()).getTime();
+						if ((end - start) > 8000) {
+							timeOut = true;
+							reConnect = false;
+						}
+						break;
+					default:
+						logWrite.write("其他:" + hexDatagram);
+						end = (new Date()).getTime();
+						if ((end - start) > 10000) {
+							timeOut = true;
+							reConnect = false;
+						}
+					}
+				} catch (Exception e) {
+					logWrite.write(e.getMessage());
+					timeOut = true;
+				}
+			}
+			/*if (num >= 3) {// 3次重连机会，超过3次就退出重连机制
+				reConnect = false;
+				logWrite.write("操作失败，请稍后重试！");
+			} else {
+				try {
+					datagramSocket.send(datagramSend);
+					logWrite.write("发送:" + getHexDatagram(send, send.length));
+					num++;
+					timeOut = false;
+				} catch (IOException e) {
+					logWrite.write(e.getMessage());
+				}
+			}*/
 		}
 		datagramReceive.setLength(1024);
 		datagramSocket.close();
