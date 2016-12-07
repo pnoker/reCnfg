@@ -55,16 +55,14 @@ public class MainFunction {
 			System.out.println(e.getMessage());
 		}
 		if (isnew) {
-			sql = "insert into Parameter (typeserial,type,value,time) values ('" + typeserial + "','" + serial + "','"
-					+ result + "',getdate())";
+			sql = "insert into Parameter (typeserial,type,value,time) values ('" + typeserial + "','" + serial + "','" + result + "',getdate())";
 			try {
 				dBtool.executeUpdate(sql);
 			} catch (SQLException e) {
 				System.out.println(e.getMessage());
 			}
 		} else {
-			sql = "update Parameter set value = '" + result + "' ,time = getdate() where typeserial = '" + typeserial
-					+ "' and type = '" + serial + "'";
+			sql = "update Parameter set value = '" + result + "' ,time = getdate() where typeserial = '" + typeserial + "' and type = '" + serial + "'";
 			try {
 				dBtool.executeUpdate(sql);
 			} catch (SQLException e) {
@@ -81,6 +79,7 @@ public class MainFunction {
 	public static void config(String typeserial, int serial, float value) {
 		QueryPara queryPara = new QueryPara();
 		Generation generation = new Generation();
+		Sqlserver dBtool = new Sqlserver();
 		byte[] connectCode = generation.connect();// 连接网关命令，固定写法
 		byte[] sendCode = generation.configCommand(typeserial, serial, value);
 		BaseInfo base = new BaseInfo();
@@ -89,11 +88,19 @@ public class MainFunction {
 		base.setPort(6001);
 		queryPara.query(base, connectCode, typeserial, serial);
 		queryPara.query(base, sendCode, typeserial, serial);
+		String sql = "delete from Command where typeserial = '" + typeserial + "' and type = '" + serial + "'";
+		try {
+			dBtool.executeUpdate(sql);
+			dBtool.free();
+		} catch (SQLException e1) {
+			System.out.println(e1.getMessage());
+		}
 	}
 
 	public static void config(String typeserial, int serial, String value) {
 		QueryPara queryPara = new QueryPara();
 		Generation generation = new Generation();
+		Sqlserver dBtool = new Sqlserver();
 		byte[] connectCode = generation.connect();// 连接网关命令，固定写法
 		byte[] sendCode = generation.configCommand(typeserial, serial, value);
 		BaseInfo base = new BaseInfo();
@@ -102,6 +109,13 @@ public class MainFunction {
 		base.setPort(6001);
 		queryPara.query(base, connectCode, typeserial, serial);
 		queryPara.query(base, sendCode, typeserial, serial);
+		String sql = "delete from Command where typeserial = '" + typeserial + "' and type = '" + serial + "'";
+		try {
+			dBtool.executeUpdate(sql);
+			dBtool.free();
+		} catch (SQLException e1) {
+			System.out.println(e1.getMessage());
+		}
 	}
 
 	public static boolean read(int serial) {
@@ -181,6 +195,10 @@ public class MainFunction {
 								System.out.println("远程配置水表流量基数");
 								config(typeserial, serial, Float.parseFloat(value));
 							}
+							if (serial == 4) {
+								System.out.println("远程配置水表脉冲数清零");
+								config(typeserial, serial, value);
+							}
 							if (serial == 5) {
 								System.out.println("远程配置水表磁性指针位置");
 								config(typeserial, serial, (1 / Float.parseFloat(value)));
@@ -188,6 +206,10 @@ public class MainFunction {
 							if (serial == 7) {
 								System.out.println("远程配置水表上传周期");
 								config(typeserial, serial, Float.parseFloat(value));
+							}
+							if (serial == 9) {
+								System.out.println("远程配置水表位号");
+								config(typeserial, serial, value);
 							}
 						}
 					}
