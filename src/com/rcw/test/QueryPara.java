@@ -98,11 +98,6 @@ public class QueryPara {
 			} else {
 				value = p.bytesToChar(13, 37);// 字节流转换成字符转
 				result += value;
-				try {
-					result = new String(result.getBytes(),"utf-8");
-				} catch (UnsupportedEncodingException e) {
-					e.printStackTrace();
-				}
 				logWrite.write("水表位号为:" + value);
 			}
 		}

@@ -55,14 +55,16 @@ public class MainFunction {
 			System.out.println(e.getMessage());
 		}
 		if (isnew) {
-			sql = "insert into Parameter (typeserial,type,value,time) values ('" + typeserial + "','" + serial + "','" + result + "',getdate())";
+			sql = "insert into Parameter (typeserial,type,value,time) values ('" + typeserial + "','" + serial + "','"
+					+ result + "',getdate())";
 			try {
 				dBtool.executeUpdate(sql);
 			} catch (SQLException e) {
 				System.out.println(e.getMessage());
 			}
 		} else {
-			sql = "update Parameter set value = '" + result + "' ,time = getdate() where typeserial = '" + typeserial + "' and type = '" + serial + "'";
+			sql = "update Parameter set value = '" + result + "' ,time = getdate() where typeserial = '" + typeserial
+					+ "' and type = '" + serial + "'";
 			try {
 				dBtool.executeUpdate(sql);
 			} catch (SQLException e) {
@@ -163,6 +165,43 @@ public class MainFunction {
 		return result;
 	}
 
+	// sql = "update devicefaultmanage set networkStatus = '1',dataStatus =
+	// '1',batteryStatus = '1',reachtime = getdate() where typeserial = '"+
+	// typeserial + "";
+	public String status() {
+		String result = "";
+		Sqlserver connect1 = new Sqlserver();
+		Sqlserver connect2 = new Sqlserver();
+		String sql = "select * from fs_equipmentmanage";
+		ResultSet rs;
+		try {
+			rs = connect1.executeQuery(sql);
+			while (rs.next()) {
+				String typeserial = rs.getString("othername");
+				String status = rs.getString("status");
+				if (status.equals("工作中")) {
+					sql = "update devicefaultmanage set dataStatus = '1',reachtime = getdate() where typeserial = '"
+							+ typeserial + "";
+				}
+				if (status.equals("非工作中")) {
+					sql = "update devicefaultmanage set dataStatus = '0',reachtime = getdate() where typeserial = '"
+							+ typeserial + "";
+				}
+				connect2.executeUpdate(sql);
+			}
+			sql = "select * from fs_equipmentmanage";
+		} catch (SQLException e1) {
+			e1.printStackTrace();
+		}
+
+		try {
+			connect1.executeUpdate(sql);
+		} catch (SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		return result;
+	}
+
 	public static void main(String[] args) {
 		System.out.println("<---初始化操作--->");
 		System.out.println("<---启动远程配置线程--->");
@@ -172,6 +211,7 @@ public class MainFunction {
 		// query("shui", 10);
 		// query("IMTAG.JL-390002", 15);
 		Timer timer = new Timer();
+		// 远程配置任务
 		timer.scheduleAtFixedRate(new TimerTask() {
 
 			@Override
@@ -223,5 +263,13 @@ public class MainFunction {
 				}
 			}
 		}, 1000, 1000);
+		// 设备故障管理
+		timer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+
+			}
+		}, 1000 * 20, 1000 * 60 * 5);
 	}
 }
