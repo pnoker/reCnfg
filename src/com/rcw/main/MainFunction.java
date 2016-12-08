@@ -2,6 +2,7 @@ package com.rcw.main;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -61,14 +62,16 @@ public class MainFunction {
 			System.out.println(e.getMessage());
 		}
 		if (isnew) {
-			sql = "insert into Parameter (typeserial,type,value,time) values ('" + typeserial + "','" + serial + "','" + result + "',getdate())";
+			sql = "insert into Parameter (typeserial,type,value,time) values ('" + typeserial + "','" + serial + "','"
+					+ result + "',getdate())";
 			try {
 				dBtool.executeUpdate(sql);
 			} catch (SQLException e) {
 				System.out.println(e.getMessage());
 			}
 		} else {
-			sql = "update Parameter set value = '" + result + "' ,time = getdate() where typeserial = '" + typeserial + "' and type = '" + serial + "'";
+			sql = "update Parameter set value = '" + result + "' ,time = getdate() where typeserial = '" + typeserial
+					+ "' and type = '" + serial + "'";
 			try {
 				dBtool.executeUpdate(sql);
 			} catch (SQLException e) {
@@ -186,10 +189,12 @@ public class MainFunction {
 				String typeserial = rs.getString("othername");
 				String status = rs.getString("status");
 				if (status.equals("工作中")) {
-					sql = "update devicefaultmanage set dataStatus = '1',reachtime = getdate() where typeserial = '" + typeserial + "";
+					sql = "update devicefaultmanage set dataStatus = '1',reachtime = getdate() where typeserial = '"
+							+ typeserial + "";
 				}
 				if (status.equals("非工作中")) {
-					sql = "update devicefaultmanage set dataStatus = '0',reachtime = getdate() where typeserial = '" + typeserial + "";
+					sql = "update devicefaultmanage set dataStatus = '0',reachtime = getdate() where typeserial = '"
+							+ typeserial + "";
 				}
 				connect2.executeUpdate(sql);
 			}
@@ -197,14 +202,17 @@ public class MainFunction {
 			for (Entry<String, String> entry : MainFunction.serial.entrySet()) {
 				String weihaosia = entry.getKey();
 				String weihao = entry.getValue();
-				sql = "select top 1 * from dianya_data where typeserial = '" + weihaosia + "' and tag = 0 order by reachtime desc";
+				sql = "select top 1 * from dianya_data where typeserial = '" + weihaosia
+						+ "' and tag = 0 order by reachtime desc";
 				rs = connect1.executeQuery(sql);
 				while (rs.next()) {
 					float dianya = rs.getFloat("value");
 					if (dianya >= 3.1) {
-						sql = "update devicefaultmanage set batteryStatus = '1',reachtime = getdate() where typeserial = '" + weihao + "";
+						sql = "update devicefaultmanage set batteryStatus = '1',reachtime = getdate() where typeserial = '"
+								+ weihao + "";
 					} else {
-						sql = "update devicefaultmanage set batteryStatus = '0',reachtime = getdate() where typeserial = '" + weihao + "";
+						sql = "update devicefaultmanage set batteryStatus = '0',reachtime = getdate() where typeserial = '"
+								+ weihao + "";
 					}
 					connect2.executeUpdate(sql);
 				}
@@ -218,9 +226,11 @@ public class MainFunction {
 				while (rs.next()) {
 					float signal = rs.getFloat("signal");
 					if (signal > 0) {
-						sql = "update devicefaultmanage set networkStatus = '1',reachtime = getdate() where typeserial = '" + weihao + "";
+						sql = "update devicefaultmanage set networkStatus = '1',reachtime = getdate() where typeserial = '"
+								+ weihao + "";
 					} else {
-						sql = "update devicefaultmanage set networkStatus = '0',reachtime = getdate() where typeserial = '" + weihao + "";
+						sql = "update devicefaultmanage set networkStatus = '0',reachtime = getdate() where typeserial = '"
+								+ weihao + "";
 					}
 					connect2.executeUpdate(sql);
 				}
@@ -251,6 +261,8 @@ public class MainFunction {
 
 			@Override
 			public void run() {
+				System.out.println("当前时间为：" + new Date());
+				System.out.println("开始设备故障诊断");
 				Sqlserver connect = new Sqlserver();
 				String sql = "select * from Command where enable = 0 order by time asc";
 				try {
