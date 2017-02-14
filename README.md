@@ -1,2 +1,2 @@
-# reCnfg
-Remote Configuration WIA远程配置工具
+#reCnfg
+基于WIA-PA，远程查询、远程配置
