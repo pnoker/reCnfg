@@ -50,61 +50,66 @@ public class QueryPara {
 	/**
 	 * 正响应解析
 	 */
-	public String success(PackageProcessor p) {
-		String result = "";
-		if (p.bytesToString(11, 12).equals("1605")) {
-			int value = p.bytesToIntSmall(13, 16);
-			result += value;
-			logWrite.write("水表上传周期为:" + value + "S");
-		}
-		if (p.bytesToString(11, 12).equals("1305")) {
-			String value = p.bytesToString(13, 16);
-			String num = "";
-			switch (value) {
-			case "cdcccc3d":
-				num = "1";
-				break;
-			case "0000803f":
-				num = "0.1";
-				break;
-			case "00002041":
-				num = "0.01";
-				break;
-			case "0000c842":
-				num = "0.001";
-				break;
-			case "00007a44":
-				num = "0.0001";
-				break;
+	public Result success(PackageProcessor p, String typeserial) {
+		Result result = new Result();
+		String longAddress = MainFunction.item.get(typeserial).split("#")[0];
+		result.setSuccess(false);
+		if (p.bytesToString(3, 10).equals(longAddress.toLowerCase())) {
+			if (p.bytesToString(11, 12).equals("1605")) {
+				int value = p.bytesToIntSmall(13, 16);
+				result.setResult("" + value);
+				logWrite.write("水表上传周期为:" + value + "S");
 			}
-			result += num;
-			logWrite.write("水表磁性指针位置为:" + num);
-		}
-		if (p.bytesToString(11, 12).equals("1005")) {
-			float value = p.bytesToFloatSmall(13, 16);
-			result += value;
-			logWrite.write("水表基数为:" + value + "M³");
-		}
-		if (p.bytesToString(11, 12).equals("1505")) {
-			float value = p.bytesToFloatSmall(13, 16);
-			result += value;
-			logWrite.write("水表流量值为:" + value + "M³");
-		}
-		if (p.bytesToString(11, 12).equals("be00")) {
-			String value = p.bytesToString(13, 37);
-			if (value.equals("ffffffffffffffffffffffffffffffffffffffffffffffff00")) {
-				logWrite.write("未配置水表位号");
-				result += "未配置水表位号";
-			} else {
-				value = p.bytesToChar(13, 37);// 字节流转换成字符转
-				result += value;
-				logWrite.write("水表位号为:" + value);
+			if (p.bytesToString(11, 12).equals("1305")) {
+				String value = p.bytesToString(13, 16);
+				String num = "";
+				switch (value) {
+				case "cdcccc3d":
+					num = "1";
+					break;
+				case "0000803f":
+					num = "0.1";
+					break;
+				case "00002041":
+					num = "0.01";
+					break;
+				case "0000c842":
+					num = "0.001";
+					break;
+				case "00007a44":
+					num = "0.0001";
+					break;
+				}
+				result.setResult("" + num);
+				logWrite.write("水表磁性指针位置为:" + num);
 			}
-		}
-		if (p.bytesToString(11, 12).equals("1205")) {
-			float value = p.bytesToIntSmall(13, 16);
-			result += value;
-			logWrite.write("水表脉冲个数为:" + value + "个");
+			if (p.bytesToString(11, 12).equals("1005")) {
+				float value = p.bytesToFloatSmall(13, 16);
+				result.setResult("" + value);
+				logWrite.write("水表基数为:" + value + "M³");
+			}
+			if (p.bytesToString(11, 12).equals("1505")) {
+				float value = p.bytesToFloatSmall(13, 16);
+				result.setResult("" + value);
+				logWrite.write("水表流量值为:" + value + "M³");
+			}
+			if (p.bytesToString(11, 12).equals("be00")) {
+				String value = p.bytesToString(13, 37);
+				if (value.equals("ffffffffffffffffffffffffffffffffffffffffffffffff00")) {
+					logWrite.write("未配置水表位号");
+					result.setResult("未配置水表位号");
+				} else {
+					value = p.bytesToChar(13, 37);// 字节流转换成字符转
+					result.setResult("" + value);
+					logWrite.write("水表位号为:" + value);
+				}
+			}
+			if (p.bytesToString(11, 12).equals("1205")) {
+				float value = p.bytesToIntSmall(13, 16);
+				result.setResult("" + value);
+				logWrite.write("水表脉冲个数为:" + value + "个");
+			}
+			result.setSuccess(true);
 		}
 		return result;
 	}
@@ -224,8 +229,7 @@ public class QueryPara {
 		DatagramPacket datagramSend = null;
 		try {
 			datagramSocket = new DatagramSocket(base.getLocalport());
-			datagramSend = new DatagramPacket(send, send.length, InetAddress.getByName(base.getIpaddress()),
-					base.getPort());
+			datagramSend = new DatagramPacket(send, send.length, InetAddress.getByName(base.getIpaddress()), base.getPort());
 			num = 0;// 计数清零
 			start = (new Date()).getTime();
 		} catch (IOException e) {
@@ -257,9 +261,18 @@ public class QueryPara {
 					/* 正响应 或者是负响应二 */
 					case "026a00":
 						logWrite.write("成功:" + hexDatagram);
-						result = success(p);
-						timeOut = true;
-						reConnect = false;
+						Result successResult = success(p, typeserial);
+						if (successResult.isSuccess()) {
+							result = successResult.getResult();
+							timeOut = true;
+							reConnect = false;
+						} else {
+							end = (new Date()).getTime();
+							if ((end - start) > 8000) {
+								timeOut = true;
+								reConnect = false;
+							}
+						}
 						break;
 					/* 负响应 一 */
 					case "026980":

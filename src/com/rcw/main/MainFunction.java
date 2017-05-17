@@ -186,15 +186,17 @@ public class MainFunction {
 			sql = "select * from fs_equipmentmanage";
 			rs = connect1.executeQuery(sql);
 			while (rs.next()) {
-				String typeserial = rs.getString("othername");
+				String typeserial = rs.getString("othername").trim();
 				String status = rs.getString("status");
 				if (status.equals("工作中")) {
 					sql = "update devicefaultmanage set dataStatus = '1',reachtime = getdate() where typeserial = '"
-							+ typeserial + "";
+							+ typeserial + "'";
+					System.out.println(typeserial + " 数据状态为  1");
 				}
 				if (status.equals("非工作中")) {
 					sql = "update devicefaultmanage set dataStatus = '0',reachtime = getdate() where typeserial = '"
-							+ typeserial + "";
+							+ typeserial + "'";
+					System.out.println(typeserial + " 数据状态为  0");
 				}
 				connect2.executeUpdate(sql);
 			}
@@ -209,10 +211,12 @@ public class MainFunction {
 					float dianya = rs.getFloat("value");
 					if (dianya >= 3.1) {
 						sql = "update devicefaultmanage set batteryStatus = '1',reachtime = getdate() where typeserial = '"
-								+ weihao + "";
+								+ weihao + "'";
+						System.out.println(weihao + " 电池状态为  1");
 					} else {
 						sql = "update devicefaultmanage set batteryStatus = '0',reachtime = getdate() where typeserial = '"
-								+ weihao + "";
+								+ weihao + "'";
+						System.out.println(weihao + " 电池状态为  0");
 					}
 					connect2.executeUpdate(sql);
 				}
@@ -227,10 +231,12 @@ public class MainFunction {
 					float signal = rs.getFloat("signal");
 					if (signal > 0) {
 						sql = "update devicefaultmanage set networkStatus = '1',reachtime = getdate() where typeserial = '"
-								+ weihao + "";
+								+ weihao + "'";
+						System.out.println(weihao + " 网络状态为  1");
 					} else {
 						sql = "update devicefaultmanage set networkStatus = '0',reachtime = getdate() where typeserial = '"
-								+ weihao + "";
+								+ weihao + "'";
+						System.out.println(weihao + " 网络状态为  0");
 					}
 					connect2.executeUpdate(sql);
 				}
@@ -261,8 +267,6 @@ public class MainFunction {
 
 			@Override
 			public void run() {
-				System.out.println("当前时间为：" + new Date());
-				System.out.println("开始设备故障诊断");
 				Sqlserver connect = new Sqlserver();
 				String sql = "select * from Command where enable = 0 order by time asc";
 				try {
@@ -311,12 +315,12 @@ public class MainFunction {
 			}
 		}, 1000, 1000);
 		// 设备故障管理
-		timer.schedule(new TimerTask() {
+		/*timer.schedule(new TimerTask() {
 
 			@Override
 			public void run() {
 				status();
 			}
-		}, 1000 * 20, 1000 * 60 * 5);
+		}, 1000 * 20, 1000 * 60 * 5);*/
 	}
 }
