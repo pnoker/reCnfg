@@ -98,7 +98,7 @@ public class QueryPara {
 				logWrite.write("未配置水表位号");
 				result.setResult("未配置水表位号");
 			} else {
-				value = p.bytesToChar(13, 37);// 字节流转换成字符转
+				value = p.bytesToChar(13, 37);// 字节流转换成字符串
 				result.setResult("" + value);
 				logWrite.write("水表位号为:" + value);
 			}
